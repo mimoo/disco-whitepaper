@@ -1,0 +1,9 @@
+*~
+
+*.aux
+*.bcf
+*.log
+*.out
+*.xml
+
+_minted-main
