@@ -5,5 +5,8 @@
 *.log
 *.out
 *.xml
+*.bbl
+*.blg
+*.pdf
 
-_minted-main
+_minted-*
