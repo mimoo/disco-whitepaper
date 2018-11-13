@@ -7,5 +7,5 @@ disco.pdf: *.tex *.bib
 	@pdflatex -shell-escape disco.tex
 
 clean:
-	rm -f *.bcf *.pyg *.xml *~ *.aux *.bbl *.blg *.log *.out
+	rm -f *.bcf *.pyg *.xml *~ *.aux *.bbl *.blg *.log *.out *.pdf
 	rm -r _minted-disco
