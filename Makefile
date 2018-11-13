@@ -1,16 +1,7 @@
-TEXS=main.tex
-PDFS=${TEXS:.tex=.pdf}
-BIB=references.bib
+all:disco.pdf
 
-all:${PDFS}
-
-${PDFS}: ${BIB} 
-
-%.pdf: %.tex *.tex
-	@pdflatex -shell-escape $< 
-	@-bibtex ${<:.tex=}
-	@pdflatex -shell-escape $< 
-	@pdflatex -shell-escape $<
+disco.pdf: *.tex *.bib
+	@pdflatex -shell-escape disco.tex
 
 clean:
-	rm -f ${TEXS:.tex=.aux} ${TEXS:.tex=.log} ${TEXS:.tex=.blg} ${TEXS:.tex=.bbl} ${PDFS} ${TEXS:.tex=.out} texput.log
+	rm -f *.bcf *.pyg *.xml *~
