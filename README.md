@@ -1,13 +1,17 @@
-# Disco whitepaper
+# Disco
 
-## TODO
+This repository is to track research being done on the Disco protocol and its real-world implementations. Anyone who has access to this is invited to contribute or to lurk :)
 
-- [ ] formally prove the protocol
-- [ ] what are the implementation results?
-- [ ] real-world deployement
-    - implement in nginx, apache, etc. ?
-    - implement in embedded devices
-    - for mobile
+## State
+
+- [ ] **Protocol**. The protocol currently strongly relies on Strobe for the symmetric parts, but what about the asymmetric parts? Current state: X25519 for the key exchange algorithm and either ed25519, Strobe's Schnorr-variant or qDSA for the signature scheme.
+- [ ] **Specification**. It is currently written as an [extension of Noise](https://www.discocrypto.com/disco.html), but It would be better if it was a self-contained RFC relying on the Strobe spec.
+- [ ] **Formal Proofs**. I am interested in formally proving the protocol via Tamarin. [I sketched some ideas here](https://github.com/mimoo/disco-whitepaper/issues/1), the trick part is that there is no sponge/duplex/strobe support there so we either need to be clever or work closely with the Tamarin people. 
+- [ ] **Paper Proofs**. Paper proofs should be more straight forward based on what was done already for the keyed duplex construction.
+- [ ] **Real-World deployement**. To be a successful protocol, Disco needs to be implemented in different languages (currently it is implemented in [Golang](https://www.discocrypto.com), [C](https://www.embeddeddisco.com), [C#](https://github.com/Fasjeit/DiscoNet), [Python](https://github.com/Fasjeit/PyDisco)). In addition, it needs to be integrated to different library and frameworks (nginx, apache, what else? Android/iOS?)
+- [ ] **Embedded Platforms**. The Disco protocol should be especially attracting for small embedded devices as it is tiny. What are the results on different platforms for either a Rust implementation or a [C](https://www.embeddeddisco.com) implementation? What about facilitating the usage of the library ([RiotOS](https://www.riot-os.org))? 
+- [ ] **Usability**. The Noise protocol framework is not really human friendly (even if it is probably the most human-friendly cryptographic protocol). As a library Disco should strive to be usable and to avoid repeating decades of bad cryptography history
+
 
 ## Feedback
 
