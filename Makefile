@@ -1,6 +1,6 @@
-all:disco.pdf
+all: disco.pdf
 
-disco.pdf: *.tex *.bib
+disco.pdf: disco.tex *.bib
 	@pdflatex -shell-escape disco.tex
 	@biber disco.bcf
 	@pdflatex -shell-escape disco.tex

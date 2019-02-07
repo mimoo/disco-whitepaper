@@ -1,17 +1,11 @@
 
 \section{Formal Verification}
 
-* In order to make sure that the security properties of this protocol retain the security properties of the noise protocol frameworks, formal analysis can be helpful
-* in this section, we detail how we did this with the Tamarin prover tool for the IK handshake
-* note that the work should be extendable to other handshakes
-* related work was done on Noise with Tamarin\cite{tamarin,suter} and with Proverif\cite{\cite{noiseexplorer}}
+In order to make sure that the security properties of Disco retain the security properties of the Noise protocol frameworks, formal analysis can be helpful. In this section we detail preliminary work done with the Tamarin Prover tool\cite{tamarinProver} in order to model the IK handshake of Disco.
 
-* to model strobe calls in Tamarin, we first note that the strobe state at some point can be reduced to a unique sponge call, due to the same properties being true for the duplex construction\ref
-* we also note that we can use the random oracle model to model a sponge in Tamarin\ref
-* for that we use the \mintinline{python}{functions: sponge\\1} 
-* so naturally, calling \mintinline{python}{send_ENC()} and \mintinline{python}{send_MAC} can be seen as: 
+Tamarin Prover is a security protocol verification tool that supports both falsification and unbounded verification in the symbolic model. Thanks to built-ins for diffie-hellman and the XOR operation, most of the operations of Disco except for Strobe can easily be modeled. In order to model Strobe calls, we need to model the underlying duplex construction. We note that the security of the duplex construction is equivalent to the one of the sponge construction (as seen in lemma 3 of \cite{spongeduplex}), and that a keyed sponge construction can be modeled as a random oracle\cite{keyedsponge}. For this reason, we model each calls to Strobe as a single call to a random oracle function in Tamarin Prover: \mintinline{python}{functions: sponge\1}. For example, we model a call to \mintinline{python}{send_ENC()} followed by a call to \mintinline{python}{send_MAC} as:
 
-\begin{minted}[breaklines,frame=single,linenos]{C}
+\begin{minted}[breaklines,frame=single,linenos]{python}
 input2 = <'ENC', input1>
 ciphertext = sponge(input2) ⊕ plaintext
 input3 = <plaintext, input2>
