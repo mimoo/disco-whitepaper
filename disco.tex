@@ -114,7 +114,7 @@ At Real World Crypto 2017, Joan Daemen won the Levchin Prize and announced that 
 
 \section{Introduction}\label{introduction}
 
-The SHA-3 competition\cite{sha3} started more than 10 years ago and came to an end in 2012 with the nomination of the Keccak\cite{fips202} algorithm built from a sponge construction hosting a permutation at its core. Later, a more generic construction was invented called the duplex construction\cite{duplex}, which led to the invention of the Strobe protocol framework\cite{strobe}, a wrapper around the construction that can be used to construct symmetric protocols. On the other side of the field, the Noise protocol framework\cite{noise} is a project aiming at making the creation of secure protocols (like SSL/TLS) more flexible, easier to analyze and easier to implement. This paper attempts to merge the two frameworks Noise and Strobe into what we call Disco, a complete protocol framework aiming at simplifying secure protocols and minimizing the need to rely on several cryptographic primitives. The result of this experiment is a cryptographic library that holds in 1000 lines of code. The library can be used to setup (flexible) secure communications between endpoints and as a typical cryptographic library for operations like hashing, deriving keys, signing, encrypting, authenticating, etc.
+The SHA-3 competition\cite{sha3} started more than 10 years ago and came to an end in 2012 with the nomination of the Keccak\cite{fips202} algorithm built from a sponge construction hosting a permutation at its core. Later, a more generic construction was invented called the duplex construction\cite{duplex}, which led to the invention of the Strobe protocol framework\cite{strobe}, a wrapper around the construction that can be used to construct symmetric protocols. On the other side of the field, the Noise protocol framework\cite{noise} is a project aiming at making the creation of secure protocols (like SSL/TLS) more flexible, easier to analyze and easier to implement. This paper attempts to merge the two frameworks Noise and Strobe into what we call Disco, a complete protocol framework aiming at simplifying secure protocols and minimizing the need to rely on several cryptographic primitives. The result of this experiment is a cryptographic library that holds in 1000 lines of code. The library can be used to setup (flexible) secure communications between endpoints and as a typical cryptographic library for operations like hashing, deriving keys, signing, encrypting, authenticating, etc.\\
 
 Section 2 introduces the algorithm behind SHA-3 (a sponge and a permutation), while section 3 presents a similar construction (the duplex construction) and one of its real world applications (Strobe). Section 4 summarizes the efforts behind the Noise protocol framework. Finally, section 5 merges the effort from the previous two sections into one: Disco. Section 6 concludes with experimental results.
 
@@ -131,9 +131,9 @@ While the NIST had many reason to choose Keccak, an interesting one was its depa
 \label{fig:sponge}
 \end{figure}
 
-As can be seen in Figure \ref{fig:sponge}, a sponge is a very simple construction. A permutation $f$ takes an input state of size $b$ (8 bits in the above example) and randomizes it. It is used repeatedly to take on a larger initial input by way of XOR'ing. Recall that our construction is a sponge, so we naturally call this phase  "absorbing". To obtain an output, the permutation is used again until enough bits have been obtained, we naturally call this phase "squeezing". The security of the construction comes from the segregation applied to input and output states of the permutation: their first part (top, of 5 bits in our example) is called the \textbf{rate}, their second part (bottom, of 3 bits in our example) is called the \textbf{capacity}. As can be observed, the capacity is never touched and only the rate is mixed with the original input and read to produce the final output. More details (like padding, size of the capacity, etc.) are involved but for the sake of simplicity we omit them here.
+As can be seen in Figure \ref{fig:sponge}, a sponge is a very simple construction. At its core, a permutation $f$ takes an input state of size $b$ (8 bits in the above example) and randomizes it. $f$ is used repeatedly to take on a larger initial input by way of XOR'ing. Recall that our construction is a sponge, so we naturally call this phase  "absorbing". To obtain an output, the permutation is used again until enough bits have been obtained, we naturally call this phase "squeezing". The security of the construction comes from the segregation applied to input and output states of the permutation: their first part (top, of 5 bits in our example) is called the \textbf{rate}, their second part (bottom, of 3 bits in our example) is called the \textbf{capacity}. As can be observed, the capacity is never touched and only the rate is mixed with the original input and read to produce the final output. More details (like padding, size of the capacity, etc.) are involved but for the sake of simplicity we omit them here.\\
 
-A full security proof exists over the security of the sponge, provided that the permutation used in the construction has no structural distinguishers. Unfortunately, we have no known ways of proving this property and as with the study of block ciphers, cryptanalysts must be invoked and thrown at the algorithm for years in order to obtain an estimation of its security posture as well as to tweak its parameters. As the inventors of Keccak had experience with block ciphers --Joan Daemen being the co-inventor of AES (with Vincent Rijmen)-- the design of \textbf{Keccak-f} (Keccak's permutation) follows similar patterns.
+A full security proof\cite{sponge} exists over the security of the sponge, provided that the permutation used in the construction has no structural distinguishers. Unfortunately, we have no known ways of mathematically proving this property on the permutation and as with the study of block ciphers, cryptanalysts must be invoked and thrown at the algorithm for years in order to obtain an estimation of its security posture as well as to tweak its parameters. As the inventors of Keccak had experience with block ciphers --Joan Daemen being the co-inventor of AES (with Vincent Rijmen)-- the design of \textbf{Keccak-f} (Keccak's permutation) follows similar patterns.
 
 \section{The duplex construction and Strobe}
 
@@ -257,17 +257,29 @@ To obtain a better understanding of our contribution, we have implemented Disco 
 
 The C implementation of Disco is around \textbf{1000 lines of code} which includes everything it needs: an X25519 implementation and Strobe (which contains an implementation of Keccak-f and a variant of Schnorr's signature algorithm with X25519). On the other hand, OpenSSL\footnote{\url{https://www.openssl.org/}} is around 700,000 lines of code and already lists 165 CVEs\footnote{\url{https://www.openssl.org/news/vulnerabilities.html}} on its page.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{rwcimg/LOC.png}
+\caption{A scaled representation of the lines-of-code count of different codebases.}
+\label{fig:LOC}
+\end{figure}
+
 The Golang implementation was released as a more complete cryptographic library, offering a plug-and-play experience to connect two peers (with a choice of different handshake patterns) and a set of stand-alone cryptographic primitives for all of an application's need. Its implementation is 1000 lines of code. Add  Strobe (which contains an implementation of the Keccak-f permutation) and that's a total of 2000 lines of code. Add an implementation of X25519 and we end up with a total of 4000 lines of code. On the other hand, Golang's standard crypto/tls\footnote{\url{https://golang.org/pkg/crypto/tls/}} library is 5000 lines of code not including certificate parsing and the numerous cryptographic primitives it needs to operate.
 
 More research needs to be done in order to benchmark the implementations and analyze their final codesize once deployed in different kind of devices and situations.
 
-\section{Conclusion}
+\section{Conclusion and Future Work}
 
-In this document We have introduced Disco, a simple protocol to encrypt sessions based on both Noise and Strobe. Disco can be implemented in only a thousand lines of code and its trust can be traced back directly to two solid cryptographic primitives: Curve25519 and Keccak-f. At the same time, thanks to the use of Strobe, an entire cryptographic library results from implementations of Disco. Future work includes proving the protocol formally, developing and testing new implementations of Disco, and standardizing the protocol as an RFC.
+In this document We have introduced Disco, a simple protocol to encrypt sessions based on both Noise and Strobe. Disco can be implemented in only a thousand lines of code and its trust can be traced back directly to two solid cryptographic primitives: Curve25519 and Keccak-f. At the same time, thanks to the use of Strobe, an entire cryptographic library results from implementations of Disco. Future work includes proving the protocol formally, developing and testing new implementations of Disco, deciding on a signature algorithm (ed25519, qDSA, Strobe's schnorr-variant, etc.) and standardizing the protocol as an RFC.
 
 \section*{Acknowledgements}
 
 Many thanks to Mike Hamburg and Trevor Perrin who are the two legs of this project.
+
+Thanks to Katriel Cohn-Gordon and Ralf Sasse for answering all my questions about Tamarin.
+
+Thanks to Thomas Pornin for discussions and help with the C implementation.
+
 \newpage
 \printbibliography
 

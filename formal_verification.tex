@@ -1,0 +1,39 @@
+
+\section{Formal Verification}
+
+* In order to make sure that the security properties of this protocol retain the security properties of the noise protocol frameworks, formal analysis can be helpful
+* in this section, we detail how we did this with the Tamarin prover tool for the IK handshake
+* note that the work should be extendable to other handshakes
+* related work was done on Noise with Tamarin\cite{tamarin,suter} and with Proverif\cite{\cite{noiseexplorer}}
+
+* to model strobe calls in Tamarin, we first note that the strobe state at some point can be reduced to a unique sponge call, due to the same properties being true for the duplex construction\ref
+* we also note that we can use the random oracle model to model a sponge in Tamarin\ref
+* for that we use the \mintinline{python}{functions: sponge\\1} 
+* so naturally, calling \mintinline{python}{send_ENC()} and \mintinline{python}{send_MAC} can be seen as: 
+
+\begin{minted}[breaklines,frame=single,linenos]{C}
+input2 = <'ENC', input1>
+ciphertext = sponge(input2) ⊕ plaintext
+input3 = <plaintext, input2>
+input4 = <'MAC', input3>
+tag = sponge(input4)
+input5 = <'0000000000000000', input4>
+\end{minted}
+
+* the reverse pairs is used because of Tamarin ways to handle pairs
+* the sponge call on line 5 is equivalent to \mintinline{python}{sponge(<'MAC', plaintext, 'ENC', input1>)}
+
+\textbf{Strobe specific}:
+
+* a permutation in strobe is required, usually before using the state directly to encrypt or produce something that MUST be based on what was absorbed previously. Permutating force absorption to matter.
+* we take care of this by calling \mintinline{python}{sponge()} when we need it
+* 'MAC' and 'ENC' are also markers that are abstractions of what happen later. We do not care about 'send_' or 'recv_' are these are implementation specific concerns
+
+\textbf{Tamarin specific}:
+
+* built-ins: diffie-hellman, xor
+* allow us to do mostly everything
+* what to prove?
+* 7.7. Payload security properties
+* 7.8. Identity hiding
+* of noise specification. Contains things like KCI, authentication, replays at every point of the protocol, and from each point of view
