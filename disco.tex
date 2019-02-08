@@ -293,10 +293,12 @@ A note regarding RAM footprint: those values have been taken with 1B (and not 10
 
 \section{Formal Verification}
 
-While the focus of this paper is not on formal verification, we want to include preliminary results. In order to make sure that the security properties of Disco retain the security properties of the Noise protocol frameworks, formal analysis can be helpful. In this section we detail preliminary work done with Tamarin Prover\cite{tamarinprover}, a security protocol verification tool, in order to model the IK handshake of Disco. The code has been open sourced\cite{discotamarin}.\\
+While the focus of this paper is not on formal verification, we include some preliminary results in this section. We modeled the IK handshake of Disco with Tamarin Prover\cite{tamarinprover}, a security protocol verification tool, and have open sourced the models\cite{discotamarin}. While the results are not yet conclusive (and might be published later in an update), formal verification is an helpful process in order to make sure that the security properties of Disco retain the security properties of the Noise protocol framework.\\
 
-\textbf{Modeling Strobe}. Thanks to built-ins for diffie-hellman and the XOR operation, most of the operations of Disco except for Strobe can easily be modeled. In order to model Strobe calls, we need to model the underlying duplex construction. We note that the security of the duplex construction is equivalent to the one of the sponge construction (as seen in \cite[lemma 3]{spongeduplex}), and that a keyed sponge construction can be modeled as a random oracle\cite{keyedsponge}. For this reason, we model each calls to Strobe as a single call to a random oracle function in Tamarin Prover: \mintinline{python}{functions: sponge\1}. For example, if we previously absorbed \mintinline{python}{input1} we model a call to \mintinline{python}{send_ENC()} followed by a call to \mintinline{python}{send_MAC} as:
+\textbf{Modeling Strobe}. Thanks to built-ins for diffie-hellman and the XOR operation, most of the operations of Disco except for Strobe can easily be modeled. In order to model Strobe calls, we need to model the underlying duplex construction. We note that the security of the duplex construction is equivalent to the one of the sponge construction (as seen in \cite[lemma 3]{spongeduplex}), and that a keyed sponge construction can be modeled as a random oracle\cite{keyedsponge}. For this reason, we model each calls to Strobe as a single call to a random oracle function in Tamarin Prover via \mintinline{python}{functions: sponge\1}. For example, if we previously absorbed \mintinline{python}{input1} we model a call to \mintinline{python}{send_ENC()} followed by a call to \mintinline{python}{send_MAC()} as:
 
+
+\begin{figure}[H]
 \begin{minted}[breaklines,frame=single,linenos,escapeinside=||,mathescape=true]{python}
 input2 = <'ENC', input1>
 ciphertext = sponge(input2) |$\oplus$| plaintext
@@ -305,6 +307,10 @@ input4 = <'MAC', input3>
 tag = sponge(input4)
 input5 = <'0000000000000000', input4>
 \end{minted}
+\vspace*{-4mm}
+\caption{Tamarin code for successive calls to \mintinline{python}{send_ENC()} and \mintinline{python}{send_MAC()}}
+\label{fig:tamarin}
+\end{figure}
 
 The sponge call on line 5 is equivalent to:
 
@@ -314,28 +320,33 @@ sponge(<'MAC', plaintext, 'ENC', input1>)
 
 Note that to circumvent the pair notation of Tamarin Prover we are forced to absorb inputs in the reverse order, which does not matter as this is an abstraction of the sponge calls. For the same reason, we use \mintinline{python}{'MAC'} as a marker of the operation, abstracting Strobe's padding and ignoring the destination (\mintinline{python}{'recv_MAC'} or \mintinline{python}{'send_MAC'}) as this is an implementation-specific concern.\\
 
-Strobe forces permutations for operations involving the network, this is to make sure that previous operations are absorbed prior to involving new sensitive operations. To model this in Tamarin Prover we call the \mintinline{python}{sponge()} function at this point in time.\\
+Strobe forces permutations for operations involving the network, this is to make sure that previous operations are absorbed prior to involving new sensitive operations. To model this in Tamarin Prover we call the \mintinline{python}{sponge()} function at this point in time. This can be seen on line 2 and line 5 of figure \ref{fig:tamarin}.\\
 
 \textbf{Formally proving the Noise security properties}. In order to prove the security properties of the IK handshake, we wrote four type of lemmas:
 
 \begin{enumerate}
-    \item Sanity checks. to make sure the protocol is correctly modeled. We passed all of these lemmas.
-    \item Standard security properties. to make sure that session keys cannot be leaked, generic protocol security lemmas were written.
+    \item Sanity checks. To obtain confidence in the translation to Tamarin, we wrote a few lemmas that checks that the protocol is correctly modeled and can properly run.
+    \item Standard security properties. To ensure that session keys cannot be leaked from the protocol, and that long-term keys remain secret to active adversaries, generic protocol security lemmas were written. 
     \item Payload security properties. \cite[Section 7.7 of the Noise Protocol Framework]{noise} claims specific security properties like forward-secrecy, KCI-resistance and replay-resistance on each of the handshake pattern messages, as well as the post-handshake messages.
     \item Identity hiding properties. \cite[Section 7.8 of the Noise Protocol Framework]{noise} claims specific properties about an adversary's knowledge of the peers' long term static public keys.
 \end{enumerate}
 
+We currently have proved all lemmas except for the payload security ones (3). This is due mostly to a lack of time as the use of the XOR built-in in Tamarin Prover make advances dramatically slow. For comparison, NoiseExplorer documents that the analysis of IKpsk2 with proverif took 21 days to complete\footnote{\url{https://moderncrypto.org/mail-archive/noise/2019/002001.html}}. Due to these limitations, the work needs to be completed at a later point in time. This is nonetheless encouraging results, and shows that modeling a Disco handshake in formal verification tools is quite natural.
 
 
 \section{Conclusion and Future Work}
 
-In this document We have introduced Disco, a simple protocol to encrypt sessions based on both Noise and Strobe. Disco can be implemented in only a thousand lines of code and its trust can be traced back directly to two solid cryptographic primitives: Curve25519 and Keccak-f. At the same time, thanks to the use of Strobe, an entire cryptographic library results from implementations of Disco. Future work includes proving the protocol formally, developing and testing new implementations of Disco, deciding on a signature algorithm (ed25519, qDSA, Strobe's schnorr-variant, etc.) and standardizing the protocol as an RFC.
+In this document We have introduced Disco, a simple protocol to encrypt sessions based on both Noise and Strobe. Disco can be implemented in only a thousand lines of code and its trust can be traced back directly to two solid cryptographic primitives: Curve25519 and Keccak-f. At the same time, thanks to the use of Strobe, an entire cryptographic library results from implementations of Disco in different programming languages. Future work includes proving all useful Disco handshakes formally, developing and testing new implementations of Disco, deciding on a signature algorithm (Ed25519, qDSA, Strobe's schnorr-variant, etc.) and standardizing the protocol as an RFC.
 
 \section*{Acknowledgements}
 
+Thanks to Matteo Bocchi and Ruggero Susella who contributed to the experimental results on embedded devices.
+
+Thanks to Artyom Makarov and Michael Rosenberg for implementing Disco in other programming languages and providing feedback on the process.
+
 Many thanks to Mike Hamburg and Trevor Perrin who are the two legs of this project.
 
-Thanks to Katriel Cohn-Gordon and Ralf Sasse for answering all my questions about Tamarin.
+Thanks to Katriel Cohn-Gordon and the Tamarin Prover team for answering all my questions about formal verification.
 
 Thanks to Thomas Pornin for discussions and help with the C implementation.
 
