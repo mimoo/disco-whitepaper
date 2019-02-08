@@ -256,7 +256,7 @@ In practice, this \mintinline{python}{SymmetricState} transparently replaces Noi
 
 \section{Experimental Results}
 
-To obtain a better understanding of our contribution, we have implemented Disco in Golang\cite{libdisco} and in C\cite{disco-c}. The protocol was independently implemented in C\#\cite{discoNet}, Python\cite{PyDisco} and Rust as well. The process is pretty straightforward, first implement or re-use a Strobe library, then implement the Noise protocol framework (or modify an existing library) using the Disco specification.
+To obtain a better understanding of our contribution, we have implemented Disco in Golang\cite{libdisco} and in C\cite{disco-c}. The protocol was independently implemented in C\#\cite{discoNet}, Python\cite{PyDisco} and Rust\cite{disco-rs} as well. The process is pretty straightforward, first implement or re-use a Strobe library, then implement the Noise protocol framework (or modify an existing library) using the Disco specification.
 
 The C implementation of Disco is around \textbf{1000 lines of code} which includes everything it needs: an X25519 implementation and Strobe (which contains an implementation of Keccak-f and a variant of Schnorr's signature algorithm with X25519). On the other hand, OpenSSL\footnote{\url{https://www.openssl.org/}} is around 700,000 lines of code and already lists 165 CVEs\footnote{\url{https://www.openssl.org/news/vulnerabilities.html}} on its page.
 
@@ -271,24 +271,20 @@ The Golang implementation was released as a more complete cryptographic library,
 
 In order to test the impact of the protocol on embedded devices, some tests for the NX pattern have been executed on STM32 MCUs, specifically an STM32L073RZT6 (Cortex-M0+, running at 32MHz) and an STM32F429ZIT6 (Cortex-M4, running at 180MHz), both compiled with Atollic TrueSTUDIO 9.2.0 (arm-gcc) and optimized with -Os option. \\
 
-Performance for a client sending 1024 byte payloads are shown in Table \ref{stm32results}: for each type of CPU, performance are provided both optimized for space and for time. In the former case, we used the default C code for Keccak and Curve25519 that is provided by \cite{disco-c}, while in the latter case we took ASM code for Keccak (eXtended Keccak Code Package\footnote{\url{https://github.com/XKCP/XKCP}}) and Curve25519 (two different versions for the Cortex-M0+\footnote{\url{http://munacl.cryptojedi.org/curve25519-cortexm0.shtml}} and for the Cortex-M4\footnote{\url{https://github.com/Emill/X25519-Cortex-M4}}) from other public domain repositories, assuring state-of-the-art performance. 
+Performance for a client sending 1024 byte payloads are shown in Table \ref{stm32results}: for each type of CPU, performance are provided both optimized for space and for time. In the former case, we used the default C code for Keccak and Curve25519 that is provided by \cite{disco-c}, while in the latter case we took ASM code for Keccak (eXtended Keccak Code Package\footnote{\url{https://github.com/XKCP/XKCP}}) and Curve25519 (two different versions for the Cortex-M0+\footnote{\url{http://munacl.cryptojedi.org/curve25519-cortexm0.shtml}} and for the Cortex-M4\footnote{\url{https://github.com/Emill/X25519-Cortex-M4}}) from other public domain repositories, assuring state-of-the-art performance.
+
+A note regarding RAM footprint: those values have been taken with 1B (and not 1024B) messages, in order to benchmark only the protocol minimum RAM usage. The size of the messages will depend, instead, on the application.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{|l|c|r|r|r|}
+\begin{tabular}{|l|c|r|r|r|r|}
 \hline
-\multirow{2}{*}{\textbf{CPU}} & \multirow{2}{*}{\textbf{ASM opt.}} & \multirow{2}{*}{\textbf{Codesize (B)}} & \multicolumn{2}{c|}{\textbf{Clock Cycles}} \\ \cline{4-5} 
-                     &            &                & \textbf{Handshake} & \textbf{Payload} \\ \hline
-\multirow{2}{*}{M0+} &     --     &          6,192 &        398,918,083 &          517,536 \\ \cline{2-5} 
-                     & \checkmark &         23,892 &         17,807,320 &          247,515 \\ \hline
-\multirow{2}{*}{M4}  &     --     &          6,046 &         89,824,263 &          347,560 \\ \cline{2-5} 
-                     & \checkmark &         15,894 &          2,077,886 &          129,143 \\ \hline
-%\multirow{2}{*}{\textbf{CPU}} & \multirow{2}{*}{\textbf{ASM opt.}} & \multicolumn{2}{c|}{\textbf{Footprint (kB)}} & \multicolumn{2}{c|}{\textbf{Clock Cycles}} \\ \cline{3-6} 
-%                     &            & \textbf{Flash} & \textbf{RAM} & \textbf{Handshake} & \textbf{Payload} \\ \hline
-%\multirow{2}{*}{M0+} &     --     &          6,192 &              &        398,918,083 &          517,536 \\ \cline{2-6} 
-%                     & \checkmark &         23,892 &              &         17,807,320 &          247,515 \\ \hline
-%\multirow{2}{*}{M4}  &     --     &          6,046 &              &         89,824,263 &          347,560 \\ \cline{2-6} 
-%                     & \checkmark &         15,894 &              &          2,077,886 &          129,143 \\ \hline
+\multirow{2}{*}{\textbf{CPU}} & \multirow{2}{*}{\textbf{ASM opt.}} & \multicolumn{2}{c|}{\textbf{Footprint (B)}} & \multicolumn{2}{c|}{\textbf{Clock Cycles}} \\ \cline{3-6} 
+                     &            & \textbf{Flash} & \textbf{RAM} & \textbf{Handshake} & \textbf{Payload} \\ \hline
+\multirow{2}{*}{M0+} &     --     &          6,192 &        5,169 &        398,918,083 &          517,536 \\ \cline{2-6} 
+                     & \checkmark &         23,892 &        3,465 &         17,807,320 &          247,515 \\ \hline
+\multirow{2}{*}{M4}  &     --     &          6,046 &        5,097 &         89,824,263 &          347,560 \\ \cline{2-6} 
+                     & \checkmark &         15,894 &        3,401 &          2,077,886 &          129,143 \\ \hline
 \end{tabular}
 \caption{Results on some Cortex-M MCUs}
 \label{stm32results}
@@ -297,9 +293,9 @@ Performance for a client sending 1024 byte payloads are shown in Table \ref{stm3
 
 \section{Formal Verification}
 
-In order to make sure that the security properties of Disco retain the security properties of the Noise protocol frameworks, formal analysis can be helpful. In this section we detail preliminary work done with Tamarin Prover\cite{tamarinprover}, a security protocol verification tool, in order to model the IK handshake of Disco. The code has been open sourced\cite{discotamarin}.\\
+While the focus of this paper is not on formal verification, we want to include preliminary results. In order to make sure that the security properties of Disco retain the security properties of the Noise protocol frameworks, formal analysis can be helpful. In this section we detail preliminary work done with Tamarin Prover\cite{tamarinprover}, a security protocol verification tool, in order to model the IK handshake of Disco. The code has been open sourced\cite{discotamarin}.\\
 
-\textbf{Modelling Strobe}. Thanks to built-ins for diffie-hellman and the XOR operation, most of the operations of Disco except for Strobe can easily be modeled. In order to model Strobe calls, we need to model the underlying duplex construction. We note that the security of the duplex construction is equivalent to the one of the sponge construction (as seen in lemma 3 of \cite{spongeduplex}), and that a keyed sponge construction can be modeled as a random oracle\cite{keyedsponge}. For this reason, we model each calls to Strobe as a single call to a random oracle function in Tamarin Prover: \mintinline{python}{functions: sponge\1}. For example, if we previously absorbed \mintinline{python}{input1} we model a call to \mintinline{python}{send_ENC()} followed by a call to \mintinline{python}{send_MAC} as:
+\textbf{Modeling Strobe}. Thanks to built-ins for diffie-hellman and the XOR operation, most of the operations of Disco except for Strobe can easily be modeled. In order to model Strobe calls, we need to model the underlying duplex construction. We note that the security of the duplex construction is equivalent to the one of the sponge construction (as seen in \cite[lemma 3]{spongeduplex}), and that a keyed sponge construction can be modeled as a random oracle\cite{keyedsponge}. For this reason, we model each calls to Strobe as a single call to a random oracle function in Tamarin Prover: \mintinline{python}{functions: sponge\1}. For example, if we previously absorbed \mintinline{python}{input1} we model a call to \mintinline{python}{send_ENC()} followed by a call to \mintinline{python}{send_MAC} as:
 
 \begin{minted}[breaklines,frame=single,linenos,escapeinside=||,mathescape=true]{python}
 input2 = <'ENC', input1>
@@ -318,9 +314,9 @@ sponge(<'MAC', plaintext, 'ENC', input1>)
 
 Note that to circumvent the pair notation of Tamarin Prover we are forced to absorb inputs in the reverse order, which does not matter as this is an abstraction of the sponge calls. For the same reason, we use \mintinline{python}{'MAC'} as a marker of the operation, abstracting Strobe's padding and ignoring the destination (\mintinline{python}{'recv_MAC'} or \mintinline{python}{'send_MAC'}) as this is an implementation-specific concern.\\
 
-Strobe forces permutations for operations involving the network, this is to make sure that previous operations are absorbed prior to involve new sensitive operations. To model this in Tamarin Prover we call the \mintinline{python}{'sponge()'} function at this point in time.\\
+Strobe forces permutations for operations involving the network, this is to make sure that previous operations are absorbed prior to involving new sensitive operations. To model this in Tamarin Prover we call the \mintinline{python}{sponge()} function at this point in time.\\
 
-\textbf{Formally proving Noise security properties}. In order to prove the security properties of the IK handshake, we wrote four type of lemmas:
+\textbf{Formally proving the Noise security properties}. In order to prove the security properties of the IK handshake, we wrote four type of lemmas:
 
 \begin{enumerate}
     \item Sanity checks. to make sure the protocol is correctly modeled. We passed all of these lemmas.
@@ -328,6 +324,7 @@ Strobe forces permutations for operations involving the network, this is to make
     \item Payload security properties. \cite[Section 7.7 of the Noise Protocol Framework]{noise} claims specific security properties like forward-secrecy, KCI-resistance and replay-resistance on each of the handshake pattern messages, as well as the post-handshake messages.
     \item Identity hiding properties. \cite[Section 7.8 of the Noise Protocol Framework]{noise} claims specific properties about an adversary's knowledge of the peers' long term static public keys.
 \end{enumerate}
+
 
 
 \section{Conclusion and Future Work}
